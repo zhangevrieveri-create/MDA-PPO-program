@@ -1,0 +1,26 @@
+# 示例实验：4 只股票（贵州茅台、五粮液、招商银行、中国平安），量价 + 米筐新闻舆情，2017-01-03 ~ 2024-12-31
+# 论文的全量数据（3699 只股票）为付费数据，无法随仓库公开，说明见 examples/rq4/README.md
+# 米筐账号写在 configs/local_rqdata.yaml（不提交），它继承本文件
+base: default.yaml
+paths:
+  raw: data/rq4/raw
+  interim: data/rq4/interim
+  processed: data/rq4/processed
+  output: outputs/rq4
+
+rqdata:
+  start_date: '2017-01-03'
+  end_date: '2024-12-31'
+  codes: ['600519.XSHG', '000858.XSHE', '600036.XSHG', '601318.XSHG']   # 贵州茅台、五粮液、招商银行、中国平安
+  news: true                 # 通过 rqdatac.news.get_stock_news 获取新闻标题
+  sentiment_source: news     # 由米筐新闻的公司情绪权重聚合为个股日度情绪指数
+
+dataset:
+  name: rq4
+  universe:
+    method: codes
+    codes: ['600519.XSHG', '000858.XSHE', '600036.XSHG', '601318.XSHG']
+  start_date: '2017-01-03'
+  val_date: '2022-01-01'     # 训练 2017.07~2021（扣除 MA120 预热期），验证 2022，测试 2023~2024
+  test_date: '2023-01-01'
+  end_date: '2024-12-31'

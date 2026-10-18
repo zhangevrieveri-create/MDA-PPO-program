@@ -1,0 +1,3 @@
+# 共享评估器（EIIE 式，无标的身份）
+base: synthetic.yaml
+rl: {head: shared, asset_encoding: false}

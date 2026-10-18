@@ -1,0 +1,10 @@
+# 使用仓库内的示例数据集 data/processed/rq4.npz（截至 2024-12-31），无需米筐账号
+#   训练与回测：python scripts/05_train.py --config examples/rq4/config.yaml --epochs 15
+#               python scripts/06_backtest.py --config examples/rq4/config.yaml
+# 原始数据不随仓库提供，从米筐重新取数见 examples/rq4/README.md
+base: ../../configs/rq_sample.yaml
+paths:
+  raw: examples/rq4/data/raw
+  interim: examples/rq4/data/interim
+  processed: examples/rq4/data/processed
+  output: examples/rq4/outputs

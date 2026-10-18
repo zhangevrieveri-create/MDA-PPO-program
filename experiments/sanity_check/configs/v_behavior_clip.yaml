@@ -1,0 +1,3 @@
+# 以采样时的行为策略为裁剪中心（算法1字面实现）
+base: synthetic.yaml
+rl: {clip_center: behavior, target_kl: 0}

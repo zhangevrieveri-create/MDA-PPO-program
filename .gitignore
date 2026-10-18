@@ -1,0 +1,46 @@
+# 数据与产出（体积大且涉及数据授权，不上传）
+/data/
+/outputs/
+/data_synthetic/
+/outputs_synthetic/
+*.pt
+*.npz
+*.parquet
+*.png
+!experiments/sanity_check/results/*.png
+!examples/rq4/data/processed/*.npz
+!examples/rq4/results/*.png
+/examples/rq4/outputs/
+/examples/rq4/data/interim/
+# 示例原始数据与处理后的数据集重复，只在本地保留
+/examples/rq4/data/raw/*
+!/examples/rq4/data/raw/instruments.csv
+/examples/rq4/export_sample.py
+
+# 本地账号与实验配置
+configs/local*.yaml
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+
+# 旧版单文件脚本
+ppo_invest.py
+
+# 本地真实数据小规模验证（米筐数据涉及授权，不上传）
+/data_real10/
+/outputs_real10/
+
+# 改写前的代码备份（git 历史中已有原版）
+/_backup_*/

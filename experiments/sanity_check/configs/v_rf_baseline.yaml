@@ -1,0 +1,3 @@
+# 短期收益只减无风险收益（不用等权控制变量）
+base: synthetic.yaml
+rl: {ret_baseline: rf}

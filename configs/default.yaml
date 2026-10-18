@@ -1,0 +1,149 @@
+# =====================================================================
+#  融合新闻舆情与量价数据的强化学习智能投资系统（MDA-PPO）—— 默认配置
+#  与投稿版论文一致。标注说明：
+#    [表4]   论文表4给出的取值        [算法1] 论文算法1给出的取值
+#    [正文]  论文正文给出的设定        [表3]   由论文表3参数量确定的结构
+#    [未给出] 论文未给出，本项目取值   [实现]  论文未涉及的工程细节，可关闭
+# =====================================================================
+
+# ----------------------------- 路径 -----------------------------
+paths:
+  raw: data/raw              # 原始数据：米筐行情、新浪新闻
+  interim: data/interim      # 中间数据：清洗后新闻、日度舆情、表1
+  processed: data/processed  # 训练数据集 (npz)
+  output: outputs            # 模型、日志、表3/表4、回测结果
+
+# ----------------------------- 米筐 RQData -----------------------------
+rqdata:
+  username: null             # 建议使用环境变量 RQDATA_USERNAME / RQDATA_PASSWORD
+  password: null
+  start_date: '2014-01-06'   # [正文] 样本区间
+  end_date: '2025-10-29'
+  chunk_size: 100
+  benchmark: '000300.XSHG'   # 沪深300：表5基准，同时用于计算市场波动率 σ_t
+  universe:                  # [正文] 股票池（论文 3699 只）
+    exclude_bj: true         # 排除北交所
+    exclude_st: ever         # ever：剔除样本期内曾被实施 ST（含 *ST）的股票；name：只看当前简称；false：不剔除
+    exclude_delisted: true   # 剔除样本期内退市的股票
+    listed_before: '2024-10-29'   # 剔除截至 2025-10-29 上市不满一年的股票
+    max_stocks: null
+  codes: null                # 只取这些股票（如 ['600519.XSHG']），null 时按上面的条件取全市场
+  news: false                # true：通过 rqdatac.news.get_stock_news 获取新闻标题
+  sentiment_source: factor   # 米筐个股新闻情绪：factor 用 get_factor；news 由米筐新闻情绪权重聚合
+  sentiment_factor: null     # 【需填写】账户开通的个股新闻情绪因子名（取值[-1,1]）；null 时该特征置 0
+
+# ----------------------------- 新浪财经新闻 -----------------------------
+news:
+  sources: [search, stock_list]
+  require_name_in_title: true
+  page_size: 20
+  max_pages: 500
+  sleep: [0.5, 1.5]
+  workers: 4
+  timeout: 15
+  close_time: '15:00'            # [正文] 15:00 收盘后发布的新闻归入下一交易日
+  history_dir: null              # 【历史新闻导入位置】见 rlinvest/data/news_clean.py
+
+# ----------------------------- 新闻情绪（第二部分） -----------------------------
+sentiment:
+  method: finbert            # [正文] finbert：三分类概率 [p_neg, p_neu, p_pos]；lexicon：词典近似（仅用于无 GPU 时调试）
+  model_name: yiyanghkust/finbert-tone-chinese   # [正文] Hugging Face 中文金融情绪模型
+  max_length: 256            # [正文] 最大序列长度
+  batch_size: 64
+  label_map: null            # 模型标签名无法识别时手工指定，如 {LABEL_0: neu, LABEL_1: pos, LABEL_2: neg}
+  decay: 0.8                 # [未给出] 式(3)(4)的衰减因子 λ ∈ [0,1]
+  extra_pos_dict: null       # lexicon 方法的扩充词典
+  extra_neg_dict: null
+
+# ----------------------------- 数据集 -----------------------------
+dataset:
+  name: a3699
+  universe:
+    method: all              # [正文] all：股票池全部股票（未上市日期用掩码）；codes：下方列表；top_news：新闻最多的 n 只
+    n: 10
+    codes: []
+    min_coverage: 0.95       # 仅 top_news 使用
+  start_date: '2014-01-06'
+  val_date: null             # [正文] 论文只划分训练集与测试集，超参数只在训练集上确定；填日期则另设验证集
+  test_date: '2023-03-21'    # [正文] 训练集 2014-01-06 ~ 2023-03-20，测试集 2023-03-21 ~ 2025-10-29
+  end_date: '2025-10-29'
+  # [表2] 6 项交易数据 + 16 项技术指标 = 22 维量价特征
+  technical: [open, close, high, low, volume, turnover,
+              ma5, ma10, ma30, ma120, ema30, boll_up, boll_dn,
+              atr, adx, kdj_k, kdj_d, kdj_j, rsi6, rsi12, rsi24, cci]
+  # [正文] 3 维舆情特征：累积净情绪 CNS（式3）、累积情绪分歧度 CDIV（式4）、米筐个股新闻情绪
+  sentiment: [cns, cdiv, rq_senti]
+  rq_senti_lag: 1            # [正文] 米筐情绪滞后 1 个交易日使用
+
+# ----------------------------- 强化学习 -----------------------------
+rl:
+  # 网络结构 [正文][表3]：F=25 时总参数量 1,477,253，与 U 无关
+  T: 20                      # [未给出] 滑动窗口长度
+  lstm_hidden: 128           # Bi-LSTM（1层，隐藏层128），双向拼接 256
+  lstm_layers: 1
+  n_heads: 8                 # Transformer 编码器 8 头，每头 32 维
+  n_layers: 2                # Transformer 编码器 2 层
+  ff_dim: 128                # 前馈网络隐藏维度 128
+  mlp_hidden: 128            # 策略/价值网络隐藏层 512→128
+  dropout: 0.0
+  dual_attention: both       # 消融：both / time（仅时间注意力）/ asset（仅标的注意力）/ none
+  m: 10                      # [正文] 每日持有得分最高的 m 只股票
+  cash: true                 # [正文] 表6 消融 w/o RF 设为 false：不持有无风险资产
+  weighting: score           # [正文] 表6 消融 w/o DW 设为 equal：入选股票等权；w/o MM 用 dataset.sentiment: [] 另建数据集
+
+  # PPO-Clip [表4][算法1]
+  lr: 3.0e-4                 # [表4] 初始学习率 η0
+  gamma: 0.99                # [表4] 折扣因子 γ
+  lam: 0.95                  # [表4] GAE 参数 λ
+  eps0: 0.2                  # [表4] 裁剪参数基准值 ε0
+  value_coef: 0.5            # [算法1] L_total = L_policy + 0.5 L_value
+  C: 1000                    # [表4] 缓存区容量 = 每次参数更新所用的连续轨迹长度
+  B: 100                     # [表4] 小批量大小
+  E: 10                      # [表4] 每批数据更新轮数
+  K: 200000                  # [未给出] 训练总步数（也可用 05_train.py --epochs 指定）
+  micro_batch: 4             # [实现] 每个小批量再拆成若干个微批量做梯度累积（全市场 U≈3700 时显存需要）
+
+  # 课程噪声 [表4][正文]：σ_noise,k = σ0·exp(−β·k)
+  sigma0: 0.4
+  beta: 0.004
+  noise_clock: step          # [正文] step：k 为训练步数；update：k 为参数更新次数（噪声衰减更慢）
+
+  # 自适应参数 [正文][算法1]：每 100 步调整
+  adapt_interval: 100
+  alpha: 0.1                 # [未给出] 自适应学习率衰减系数 α
+  vol_win: 20                # [未给出] 当前市场波动率 σ_t 的滚动窗口
+  W: 60                      # [未给出] 历史平均波动率窗口 W
+  eps_bounds: null           # 论文公式无上下限；如需限制可填 [0.1, 0.4]
+  lr_bounds: null            # 同上，如 [3.0e-5, 1.0e-3]
+
+  # 混合奖励 [表4][正文]：R_t = w1·R_short + w2·DSR + w3·Penalty，Penalty = −(2x_t − 1)²
+  w1: 0.4
+  w2: 0.5
+  w3: 0.1
+  dsr_eta: 0.01              # [未给出] 差分夏普比率矩估计步长 η（取常数 α 的形式）
+  dsr_init_B: 1.0e-4         # 二阶矩初值 B0（一阶矩初值 M0=0）
+
+  # 环境 [表4][正文]
+  tau: 0.0015                # [表4] 双边综合交易成本率，按换手量计提
+  rf: 0.01                   # [表4] 年化无风险利率（现金头寸=国债逆回购）
+  ep_len: 252                # [未给出] 每条轨迹的交易日数，结束时 d_t=1；null 表示整段训练集一条轨迹
+  trade_limits: true         # [正文] 停牌不可交易、涨停不可买入、跌停不可卖出
+
+  # 训练稳定性 [实现]（论文未涉及，可设为 false/0 关闭）
+  reward_norm: true          # 奖励按折扣回报的滑动标准差缩放（不改变最优策略）
+  adv_norm: true             # 优势值在每批数据内标准化
+  max_grad_norm: 0.5         # 梯度范数裁剪；0 关闭
+  dsr_clip: 3.0              # DSR 截断，防止二阶矩很小时数值爆炸；null 关闭
+  sigma_init: 0.1            # 策略标准差初值（输出层偏置初始化）
+
+  eval_interval: 20          # 有验证集时每隔多少次更新评估并保存最优模型
+  seed: 42
+
+# ----------------------------- 对比方法（表5、表7、表8，scripts/07_baselines.py） -----------------------------
+# 各方法每日按自己的个股得分选前 rl.m 只股票，交易成本、交易限制与 MDA-PPO 相同；以下取值论文均未给出
+baselines:
+  features: technical        # [未给出] technical：表2 的 22 维量价特征；all：与 MDA-PPO 相同的 25 维（含舆情）
+  seed: 42
+  lstm: {hidden: 64, steps: 3000, lr: 1.0e-3, days_per_batch: 4, stocks_per_day: 512}
+  eiie: {steps: 3000, lr: 1.0e-3, batch_days: 50}              # Jiang 等（2017）原文小批量 50 个交易日
+  sood: {K: 200000, hidden: 64, train_tau: 0.0}                 # Sood 等（2023）训练时不计交易成本

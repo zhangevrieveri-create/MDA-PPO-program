@@ -1,0 +1,16 @@
+# 合成数据实验的基础配置（当前默认的训练设置），其余变体只覆盖差异字段
+base: ../../../configs/default.yaml
+paths:
+  raw: data_synthetic/raw
+  interim: data_synthetic/interim
+  processed: data_synthetic/processed
+  output: outputs_synthetic
+sentiment:
+  method: lexicon            # 合成标题由词典词构成，离线即可打分
+dataset:
+  name: synthetic
+rl:
+  K: 60000
+  m: 4                       # 合成数据只有 12 只股票
+baselines:
+  sood: {K: 60000}           # 与上面 MDA-PPO 的训练步数一致

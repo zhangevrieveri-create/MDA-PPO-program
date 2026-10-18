@@ -1,0 +1,10 @@
+# 改动前代码（提交 8a8525c）的对照配置：复制到该版本工作树的 configs/ 下使用，见 experiments/sanity_check/README.md
+base: default.yaml
+paths:
+  raw: ../rl_invest/data_synthetic/raw
+  interim: ../rl_invest/data_synthetic/interim_v0
+  processed: ../rl_invest/data_synthetic/processed_v0
+  output: ../rl_invest/outputs_synthetic/v0
+rl:
+  K: 60000
+  eval_interval: 20

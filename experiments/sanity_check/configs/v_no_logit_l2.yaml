@@ -1,0 +1,3 @@
+# 去掉 logit 约束（检验 sigmoid 饱和）
+base: synthetic.yaml
+rl: {logit_l2: 0}

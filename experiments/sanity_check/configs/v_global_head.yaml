@@ -1,0 +1,3 @@
+# 全局池化策略头（对比逐标的策略头）
+base: synthetic.yaml
+rl: {head: global}

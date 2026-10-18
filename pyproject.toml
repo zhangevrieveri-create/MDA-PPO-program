@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rlinvest"
+version = "0.1.0"
+description = "融合新闻舆情与量价数据的强化学习（PPO-Clip）智能投资系统"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "pyarrow>=14",
+    "torch>=2.1",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    "tqdm>=4.66",
+    "matplotlib>=3.7",
+    "transformers>=4.40",
+]
+
+[project.optional-dependencies]
+rqdata = ["rqdatac"]
+
+[tool.setuptools.packages.find]
+include = ["rlinvest*"]

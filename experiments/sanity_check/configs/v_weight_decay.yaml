@@ -1,0 +1,3 @@
+# 加 AdamW 权重衰减
+base: synthetic.yaml
+rl: {weight_decay: 0.01}
